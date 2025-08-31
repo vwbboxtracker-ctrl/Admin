@@ -1,0 +1,2230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Box Tracking System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- Add export libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+            --sidebar: #2c3e50;
+            --sidebar-hover: #1a2530;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background: var(--sidebar);
+            color: white;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background: var(--sidebar-hover);
+            text-align: center;
+        }
+        
+        .sidebar-header h3 {
+            margin-bottom: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .sidebar-header h3 i {
+            margin-right: 10px;
+            color: var(--secondary);
+        }
+        
+        .sidebar ul {
+            list-style: none;
+        }
+        
+        .sidebar ul li a {
+            padding: 15px 20px;
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+        
+        .sidebar ul li a:hover, .sidebar ul li a.active {
+            background: var(--sidebar-hover);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .sidebar ul li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .header h1 {
+            color: var(--dark);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .header h1 i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            background: var(--light);
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+        
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid var(--primary);
+        }
+        
+        /* Card Styles */
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .card-header h2 {
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-header h2 i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        /* Stats Container */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-icon {
+            font-size: 30px;
+            width: 60px;
+            height: 60px;
+            line-height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+        }
+        
+        .stat-icon.primary {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--primary);
+        }
+        
+        .stat-icon.success {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--secondary);
+        }
+        
+        .stat-icon.warning {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--warning);
+        }
+        
+        .stat-icon.danger {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--dark);
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 14px;
+        }
+        
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--light);
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        select, input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        
+        button {
+            padding: 12px 20px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button i {
+            margin-right: 8px;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-success {
+            background-color: var(--secondary);
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* Chart Container */
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 300px;
+        }
+        
+        .chart-placeholder {
+            background: linear-gradient(45deg, #f5f7fa, #e4e9f2);
+            height: 100%;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+            font-weight: 600;
+        }
+        
+        /* Section Content */
+        .section-content {
+            display: none;
+        }
+        
+        .section-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 80px;
+                text-align: center;
+            }
+            
+            .sidebar-header h3 span {
+                display: none;
+            }
+            
+            .sidebar ul li a {
+                text-align: center;
+                padding: 15px 10px;
+            }
+            
+            .sidebar ul li a i {
+                margin-right: 0;
+                font-size: 20px;
+            }
+            
+            .sidebar ul li a span {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 80px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .user-info {
+                margin-top: 15px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .sidebar {
+                width: 0;
+                overflow: hidden;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: white;
+        }
+        
+        .status-active {
+            background: var(--secondary);
+        }
+        
+        .status-inactive {
+            background: var(--danger);
+        }
+        
+        .firebase-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: 600;
+            z-index: 1000;
+        }
+        
+        .firebase-connected {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .firebase-disconnected {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .form-container {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        
+        .form-container.active {
+            display: block;
+        }
+        
+        .password-toggle {
+            position: relative;
+        }
+        
+        .password-toggle i {
+            position: absolute;
+            right: 15px;
+            top: 42px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification.success {
+            background: var(--secondary);
+        }
+        
+        .notification.error {
+            background: var(--danger);
+        }
+    </style>
+    <!-- Firebase App (core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-boxes"></i> <span>Box Tracker</span></h3>
+        </div>
+        <ul>
+            <li><a href="#" class="active" data-section="dashboard"><i class="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
+            <li><a href="#" data-section="transactions"><i class="fas fa-exchange-alt"></i> <span>Transactions</span></a></li>
+            <li><a href="#" data-section="restaurants"><i class="fas fa-utensils"></i> <span>Restaurants</span></a></li>
+            <li><a href="#" data-section="drivers"><i class="fas fa-truck"></i> <span>Drivers</span></a></li>
+            <li><a href="#" data-section="reports"><i class="fas fa-file-alt"></i> <span>Reports</span></a></li>
+            <li><a href="#"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Admin Dashboard</h1>
+            <div class="user-info">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=3498db&color=fff" alt="Admin User">
+                <div>
+                    <div>Admin User</div>
+                    <small>Administrator</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="section-content active">
+            <!-- Stats Container -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <div class="stat-value" id="total-boxes">0</div>
+                    <div class="stat-label">Total Boxes in System</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <div class="stat-value" id="total-restaurants">0</div>
+                    <div class="stat-label">Active Restaurants</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="stat-value" id="total-drivers">0</div>
+                    <div class="stat-label">Active Drivers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon danger">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-value" id="today-transactions">0</div>
+                    <div class="stat-label">Transactions Today</div>
+                </div>
+            </div>
+
+            <!-- Chart Row -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-bar"></i> Box Movement Overview</h2>
+                    <select style="width: auto;">
+                        <option>Last 7 Days</option>
+                        <option>Last 30 Days</option>
+                        <option>Last 90 Days</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-placeholder">
+                        <i class="fas fa-chart-bar" style="font-size: 24px; margin-right: 10px;"></i>
+                        Box Movement Chart Visualization
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Transactions & Restaurant Balance -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Recent Transactions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-history"></i> Recent Transactions</h2>
+                        <button onclick="viewAllTransactions()">View All</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Driver</th>
+                                <th>Restaurant</th>
+                                <th>Boxes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-transactions">
+                            <tr>
+                                <td colspan="4" style="text-align: center;">Loading transactions...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Restaurant Balances -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-boxes"></i> Restaurant Balances</h2>
+                        <button onclick="exportRestaurantBalances()">Export</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Restaurant</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="restaurant-balances">
+                            <tr>
+                                <td colspan="3" style="text-align: center;">Loading restaurant data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Section -->
+        <div id="transactions" class="section-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-exchange-alt"></i> All Transactions</h2>
+                    <div>
+                        <button class="btn-success" id="add-transaction-btn"><i class="fas fa-plus"></i> Add Transaction</button>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="filter-driver">Filter by Driver</label>
+                        <select id="filter-driver">
+                            <option value="">All Drivers</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-restaurant">Filter by Restaurant</label>
+                        <select id="filter-restaurant">
+                            <option value="">All Restaurants</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="search">Search</label>
+                        <input type="text" id="search" placeholder="Search transactions...">
+                    </div>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Driver</th>
+                            <th>Restaurant</th>
+                            <th>Boxes Given</th>
+                            <th>Boxes Taken</th>
+                            <th>Balance Change</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-list">
+                        <tr>
+                            <td colspan="7" style="text-align: center;">Loading transactions...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    <div>Showing <span id="transactions-count">0</span> transactions</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-warning"><i class="fas fa-chevron-left"></i> Previous</button>
+                        <button class="btn-warning">Next <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Transaction Form -->
+            <div class="form-container" id="transaction-form">
+                <div class="card-header">
+                    <h2><i class="fas fa-plus-circle"></i> Add New Transaction</h2>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="transaction-driver">Driver</label>
+                        <select id="transaction-driver" required>
+                            <option value="">Select Driver</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaction-restaurant">Restaurant</label>
+                        <select id="transaction-restaurant" required>
+                            <option value="">Select Restaurant</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="boxes-given">Boxes Given</label>
+                        <input type="number" id="boxes-given" min="0" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="boxes-taken">Boxes Taken</label>
+                        <input type="number" id="boxes-taken" min="0" value="0" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="transaction-notes">Notes (Optional)</label>
+                    <textarea id="transaction-notes" rows="3" placeholder="Add any notes about this transaction"></textarea>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn-success" id="save-transaction"><i class="fas fa-save"></i> Save Transaction</button>
+                    <button class="btn-danger" id="cancel-transaction"><i class="fas fa-times"></i> Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restaurants Section -->
+        <div id="restaurants" class="section-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-utensils"></i> Restaurant Management</h2>
+                    <button class="btn-success" id="add-restaurant-btn"><i class="fas fa-plus"></i> Add Restaurant</button>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Address</th>
+                            <th>Contact</th>
+                            <th>Box Balance</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="restaurants-list">
+                        <tr>
+                            <td colspan="6" style="text-align: center;">Loading restaurants...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Add Restaurant Form -->
+            <div class="form-container" id="restaurant-form">
+                <div class="card-header">
+                    <h2><i class="fas fa-plus-circle"></i> <span id="restaurant-form-title">Add New Restaurant</span></h2>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="restaurant-name">Restaurant Name *</label>
+                        <input type="text" id="restaurant-name" placeholder="Enter restaurant name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="restaurant-address">Address</label>
+                        <input type="text" id="restaurant-address" placeholder="Enter restaurant address">
+                    </div>
+                    <div class="form-group">
+                        <label for="restaurant-contact">Contact Person</label>
+                        <input type="text" id="restaurant-contact" placeholder="Enter contact person">
+                    </div>
+                    <div class="form-group">
+                        <label for="restaurant-phone">Phone Number</label>
+                        <input type="text" id="restaurant-phone" placeholder="Enter phone number">
+                    </div>
+                    <div class="form-group">
+                        <label for="initial-boxes">Initial Boxes</label>
+                        <input type="number" id="initial-boxes" placeholder="Enter initial boxes" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="restaurant-status">Status *</label>
+                        <select id="restaurant-status" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="restaurant-notes">Notes</label>
+                    <textarea id="restaurant-notes" rows="3" placeholder="Add any notes about this restaurant"></textarea>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn-success" id="save-restaurant"><i class="fas fa-save"></i> Save Restaurant</button>
+                    <button class="btn-danger" id="cancel-restaurant"><i class="fas fa-times"></i> Cancel</button>
+                </div>
+                <input type="hidden" id="restaurant-id">
+            </div>
+        </div>
+
+        <!-- Drivers Section -->
+        <div id="drivers" class="section-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-truck"></i> Driver Management</h2>
+                    <button class="btn-success" id="add-driver-btn"><i class="fas fa-plus"></i> Add Driver</button>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="drivers-list">
+                        <tr>
+                            <td colspan="5" style="text-align: center;">Loading drivers...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Add Driver Form -->
+            <div class="form-container" id="driver-form">
+                <div class="card-header">
+                    <h2><i class="fas fa-plus-circle"></i> <span id="driver-form-title">Add New Driver</span></h2>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="driver-name">Full Name *</label>
+                        <input type="text" id="driver-name" placeholder="Enter driver's full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="driver-phone">Phone Number </label>
+                        <input type="text" id="driver-phone" placeholder="Enter phone number" >
+                    </div>
+                    <div class="form-group">
+                        <label for="driver-email">Email Address </label>
+                        <input type="email" id="driver-email" placeholder="Enter email address" >
+                    </div>
+                    <div class="form-group">
+                        <label for="driver-status">Status *</label>
+                        <select id="driver-status" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-group password-toggle">
+                        <label for="driver-password">Password *</label>
+                        <input type="password" id="driver-password" placeholder="Enter password" required>
+                        <i class="fas fa-eye" id="toggle-password"></i>
+                    </div>
+                    <div class="form-group password-toggle">
+                        <label for="confirm-password">Confirm Password *</label>
+                        <input type="password" id="confirm-password" placeholder="Confirm password" required>
+                        <i class="fas fa-eye" id="toggle-confirm-password"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="driver-address">Address</label>
+                    <textarea id="driver-address" rows="2" placeholder="Enter driver's address"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="driver-notes">Notes</label>
+                    <textarea id="driver-notes" rows="2" placeholder="Add any notes about this driver"></textarea>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn-success" id="save-driver"><i class="fas fa-save"></i> Save Driver</button>
+                    <button class="btn-danger" id="cancel-driver"><i class="fas fa-times"></i> Cancel</button>
+                </div>
+                <input type="hidden" id="driver-id">
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reports" class="section-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-file-alt"></i> Generate Reports</h2>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="report-type">Report Type</label>
+                        <select id="report-type">
+                            <option value="transactions">Transaction Report</option>
+                            <option value="restaurants">Restaurant Balance Report</option>
+                            <option value="drivers">Driver Activity Report</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date-from">From Date</label>
+                        <input type="date" id="date-from">
+                    </div>
+                    <div class="form-group">
+                        <label for="date-to">To Date</label>
+                        <input type="date" id="date-to">
+                    </div>
+                    <div class="form-group">
+                        <label for="report-driver">Driver</label>
+                        <select id="report-driver">
+                            <option value="">All Drivers</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="report-restaurant">Restaurant</label>
+                        <select id="report-restaurant">
+                            <option value="">All Restaurants</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="report-sort">Sort By</label>
+                        <select id="report-sort">
+                            <option value="date-desc">Date (Newest First)</option>
+                            <option value="date-asc">Date (Oldest First)</option>
+                            <option value="restaurant">Restaurant</option>
+                            <option value="driver">Driver</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button class="btn-danger" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf"></i> Export to PDF
+                    </button>
+                    <button class="btn-success" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel"></i> Export to Excel
+                    </button>
+                    <button class="btn-warning" onclick="printReport()">
+                        <i class="fas fa-print"></i> Print Report
+                    </button>
+                    <button id="generate-report" class="btn-success">
+                        <i class="fas fa-eye"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-history"></i> Report Results</h2>
+                </div>
+                
+                <div id="report-results">
+                    <p>Select date range and generate a report to view results.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="firebase-status" class="firebase-status firebase-disconnected">
+            <i class="fas fa-plug"></i> Disconnected from Firebase
+        </div>
+        
+        <div id="notification" class="notification">
+            <span id="notification-message"></span>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcCicPO7xXiH9TPbsO62fLw_xDZF6KGdQ",
+            authDomain: "vwbboxtracker-b682c.firebaseapp.com",
+            databaseURL: "https://vwbboxtracker-b682c-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "vwbboxtracker-b682c",
+            storageBucket: "vwbboxtracker-b682c.firebasestorage.app",
+            messagingSenderId: "188242051738",
+            appId: "1:188242051738:web:d02c3b9337711c9ba55523",
+            measurementId: "G-6QXYPGM3MV"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // Secret key for encryption
+        const ENCRYPTION_KEY = "BoxTrackingSystem2023!";
+        
+        // Encryption functions
+        function encryptPassword(password) {
+            return CryptoJS.AES.encrypt(password, ENCRYPTION_KEY).toString();
+        }
+        
+        function decryptPassword(encryptedPassword) {
+            if (!encryptedPassword) return "";
+            const bytes = CryptoJS.AES.decrypt(encryptedPassword, ENCRYPTION_KEY);
+            return bytes.toString(CryptoJS.enc.Utf8);
+        }
+        
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const messageElement = document.getElementById('notification-message');
+            
+            messageElement.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.className = 'notification';
+            }, 3000);
+        }
+        
+        // Password toggle functionality
+        document.getElementById('toggle-password').addEventListener('click', function() {
+            const passwordInput = document.getElementById('driver-password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+        
+        document.getElementById('toggle-confirm-password').addEventListener('click', function() {
+            const passwordInput = document.getElementById('confirm-password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+        
+        // Export to PDF function
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Get the current report type
+            const reportType = document.getElementById('report-type').value;
+            const startDate = document.getElementById('date-from').value;
+            const endDate = document.getElementById('date-to').value;
+            
+            let title = 'Box Tracking Report';
+            
+            if (reportType === 'transactions') {
+                title = `Transaction Report (${startDate} to ${endDate})`;
+            } else if (reportType === 'restaurants') {
+                title = 'Restaurant Balance Report';
+            } else if (reportType === 'drivers') {
+                title = 'Driver Activity Report';
+            }
+            
+            // Add title
+            doc.setFontSize(16);
+            doc.text(title, 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+            
+            // Get table data from the report results
+            const table = document.querySelector('#report-results table');
+            if (!table) {
+                showNotification('No data to export', 'error');
+                return;
+            }
+            
+            const headers = [];
+            const rows = [];
+            
+            // Get headers
+            table.querySelectorAll('thead th').forEach(th => {
+                headers.push(th.textContent);
+            });
+            
+            // Get rows
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const row = [];
+                tr.querySelectorAll('td').forEach(td => {
+                    // Remove HTML tags from status cells
+                    let text = td.textContent;
+                    if (td.querySelector('.status')) {
+                        text = td.querySelector('.status').textContent;
+                    }
+                    row.push(text);
+                });
+                rows.push(row);
+            });
+            
+            // Add table to PDF
+            doc.autoTable({
+                head: [headers],
+                body: rows,
+                startY: 30,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [52, 152, 219] }
+            });
+            
+            // Save PDF
+            doc.save(`BoxTracking_${reportType}_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+            showNotification('PDF exported successfully!', 'success');
+        }
+        
+        // Export to Excel function
+        function exportToExcel() {
+            const reportType = document.getElementById('report-type').value;
+            const startDate = document.getElementById('date-from').value;
+            const endDate = document.getElementById('date-to').value;
+            
+            let title = 'Box Tracking Report';
+            
+            if (reportType === 'transactions') {
+                title = `Transaction Report (${startDate} to ${endDate})`;
+            } else if (reportType === 'restaurants') {
+                title = 'Restaurant Balance Report';
+            } else if (reportType === 'drivers') {
+                title = 'Driver Activity Report';
+            }
+            
+            // Get table data
+            const table = document.querySelector('#report-results table');
+            if (!table) {
+                showNotification('No data to export', 'error');
+                return;
+            }
+            
+            const data = [];
+            
+            // Get headers
+            const headers = [];
+            table.querySelectorAll('thead th').forEach(th => {
+                headers.push(th.textContent);
+            });
+            data.push(headers);
+            
+            // Get rows
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const row = [];
+                tr.querySelectorAll('td').forEach(td => {
+                    // Remove HTML tags from status cells
+                    let text = td.textContent;
+                    if (td.querySelector('.status')) {
+                        text = td.querySelector('.status').textContent;
+                    }
+                    row.push(text);
+                });
+                data.push(row);
+            });
+            
+            // Create worksheet
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Report');
+            
+            // Generate Excel file
+            XLSX.writeFile(wb, `BoxTracking_${reportType}_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+            showNotification('Excel file exported successfully!', 'success');
+        }
+        
+        // Export Restaurant Balances function
+        function exportRestaurantBalances() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(16);
+            doc.text('Restaurant Balances Report', 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+            
+            // Get restaurant data
+            const headers = ['Restaurant', 'Address', 'Contact', 'Box Balance', 'Status'];
+            const rows = [];
+            
+            db.collection('restaurants').orderBy('name').get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const restaurant = doc.data();
+                        rows.push([
+                            restaurant.name || '',
+                            restaurant.address || '',
+                            restaurant.contact || '',
+                            restaurant.boxBalance || 0,
+                            restaurant.status || ''
+                        ]);
+                    });
+                    
+                    // Add table to PDF
+                    doc.autoTable({
+                        head: [headers],
+                        body: rows,
+                        startY: 30,
+                        styles: { fontSize: 8 },
+                        headStyles: { fillColor: [52, 152, 219] }
+                    });
+                    
+                    // Save PDF
+                    doc.save(`Restaurant_Balances_${new Date().toISOString().slice(0, 10)}.pdf`);
+                    showNotification('Restaurant balances exported successfully!', 'success');
+                })
+                .catch((error) => {
+                    console.error('Error exporting restaurant balances: ', error);
+                    showNotification('Error exporting restaurant balances', 'error');
+                });
+        }
+        
+        // Print report function
+        function printReport() {
+            const reportResults = document.getElementById('report-results');
+            if (!reportResults || reportResults.innerHTML.includes('Select date range')) {
+                showNotification('No report data to print', 'error');
+                return;
+            }
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Box Tracking Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h3 { color: #2c3e50; }
+                        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                        th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; }
+                        th { background-color: #f5f7fa; font-weight: bold; }
+                        .status { padding: 4px 8px; border-radius: 12px; color: white; font-size: 12px; }
+                        .status-active { background: #2ecc71; }
+                        .status-inactive { background: #e74c3c; }
+                    </style>
+                </head>
+                <body>
+                    <h2>Box Tracking System - Report</h2>
+                    <p>Generated on: ${new Date().toLocaleString()}</p>
+                    ${reportResults.innerHTML}
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+        }
+        
+        // View all transactions function
+        function viewAllTransactions() {
+            // Remove the limit from the transaction query
+            db.collection('transactions').orderBy('createdAt', 'desc').get()
+                .then((querySnapshot) => {
+                    const transactionsList = document.getElementById('transactions-list');
+                    transactionsList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        transactionsList.innerHTML = '<tr><td colspan="7" style="text-align: center;">No transactions found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((doc) => {
+                        const transaction = doc.data();
+                        const date = transaction.createdAt ? transaction.createdAt.toDate().toLocaleString() : 'N/A';
+                        
+                        transactionsList.innerHTML += `
+                            <tr>
+                                <td>${date}</td>
+                                <td>${transaction.driverName}</td>
+                                <td>${transaction.restaurantName}</td>
+                                <td>${transaction.boxesGiven}</td>
+                                <td>${transaction.boxesTaken}</td>
+                                <td>${transaction.boxesGiven - transaction.boxesTaken}</td>
+                                <td class="action-buttons">
+                                    <button class="btn-danger" onclick="deleteTransaction('${doc.id}')"><i class="fas fa-trash"></i> Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    document.getElementById('transactions-count').textContent = querySnapshot.size;
+                })
+                .catch((error) => {
+                    console.error('Error loading all transactions: ', error);
+                    document.getElementById('transactions-list').innerHTML = '<tr><td colspan="7" style="text-align: center;">Error loading transactions</td></tr>';
+                });
+        }
+        
+        // Load drivers for select dropdown
+        function loadDriversForSelect() {
+            db.collection('drivers').where('status', '==', 'active').orderBy('name').get()
+                .then((querySnapshot) => {
+                    // Update all driver dropdowns
+                    const driverSelects = [
+                        document.getElementById('transaction-driver'),
+                        document.getElementById('filter-driver'),
+                        document.getElementById('report-driver')
+                    ];
+                    
+                    driverSelects.forEach(select => {
+                        if (select) {
+                            select.innerHTML = '<option value="">All Drivers</option>';
+                            querySnapshot.forEach((doc) => {
+                                const driver = doc.data();
+                                select.innerHTML += `<option value="${doc.id}">${driver.name}</option>`;
+                            });
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error loading drivers for select: ', error);
+                });
+        }
+        
+        // Load restaurants for select dropdown
+        function loadRestaurantsForSelect() {
+            db.collection('restaurants').where('status', '==', 'active').orderBy('name').get()
+                .then((querySnapshot) => {
+                    // Update all restaurant dropdowns
+                    const restaurantSelects = [
+                        document.getElementById('transaction-restaurant'),
+                        document.getElementById('filter-restaurant'),
+                        document.getElementById('report-restaurant')
+                    ];
+                    
+                    restaurantSelects.forEach(select => {
+                        if (select) {
+                            select.innerHTML = '<option value="">All Restaurants</option>';
+                            querySnapshot.forEach((doc) => {
+                                const restaurant = doc.data();
+                                select.innerHTML += `<option value="${doc.id}">${restaurant.name}</option>`;
+                            });
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error loading restaurants for select: ', error);
+                });
+        }
+        
+        // Navigation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all dropdowns when page loads
+            loadDriversForSelect();
+            loadRestaurantsForSelect();
+            
+            // Section navigation
+            const navLinks = document.querySelectorAll('.sidebar ul li a');
+            const sections = document.querySelectorAll('.section-content');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    if (this.getAttribute('data-section') === undefined) return;
+                    
+                    // Remove active class from all links and sections
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+                    
+                    // Add active class to current link and section
+                    this.classList.add('active');
+                    document.getElementById(this.getAttribute('data-section')).classList.add('active');
+                    
+                    // Update header text
+                    const headerText = this.querySelector('span').textContent;
+                    document.querySelector('.header h1').innerHTML = '<i class="' + this.querySelector('i').className + '"></i> ' + headerText;
+                    
+                    // Load data for the active tab
+                    if (this.getAttribute('data-section') === 'drivers') {
+                        loadDrivers();
+                    } else if (this.getAttribute('data-section') === 'restaurants') {
+                        loadRestaurants();
+                    } else if (this.getAttribute('data-section') === 'transactions') {
+                        loadTransactions();
+                    } else if (this.getAttribute('data-section') === 'dashboard') {
+                        loadDashboard();
+                    }
+                });
+            });
+            
+            // Form toggles
+            document.getElementById('add-driver-btn').addEventListener('click', () => {
+                showDriverForm();
+            });
+            
+            document.getElementById('cancel-driver').addEventListener('click', () => {
+                hideDriverForm();
+            });
+            
+            document.getElementById('add-restaurant-btn').addEventListener('click', () => {
+                showRestaurantForm();
+            });
+            
+            document.getElementById('cancel-restaurant').addEventListener('click', () => {
+                hideRestaurantForm();
+            });
+            
+            document.getElementById('add-transaction-btn').addEventListener('click', () => {
+                document.getElementById('transaction-form').style.display = 'block';
+            });
+            
+            document.getElementById('cancel-transaction').addEventListener('click', () => {
+                document.getElementById('transaction-form').style.display = 'none';
+            });
+            
+            // Form submissions
+            document.getElementById('save-driver').addEventListener('click', saveDriver);
+            document.getElementById('save-restaurant').addEventListener('click', saveRestaurant);
+            document.getElementById('save-transaction').addEventListener('click', saveTransaction);
+            document.getElementById('generate-report').addEventListener('click', generateReport);
+            
+            // Firebase connection status
+            firebase.firestore().enableNetwork()
+                .then(() => {
+                    document.getElementById('firebase-status').className = 'firebase-status firebase-connected';
+                    document.getElementById('firebase-status').innerHTML = '<i class="fas fa-plug"></i> Connected to Firebase';
+                    loadInitialData();
+                })
+                .catch((error) => {
+                    console.error("Error connecting to Firebase:", error);
+                });
+        });
+        
+        // Load initial data
+        function loadInitialData() {
+            loadDashboard();
+            loadDriversForSelect();
+            loadRestaurantsForSelect();
+            loadDrivers();
+            loadRestaurants();
+        }
+        
+        // Load dashboard data
+        function loadDashboard() {
+            // Load total drivers
+            db.collection('drivers').where('status', '==', 'active').get()
+                .then((querySnapshot) => {
+                    document.getElementById('total-drivers').textContent = querySnapshot.size;
+                });
+            
+            // Load total restaurants
+            db.collection('restaurants').where('status', '==', 'active').get()
+                .then((querySnapshot) => {
+                    document.getElementById('total-restaurants').textContent = querySnapshot.size;
+                });
+            
+            // Load today's transactions
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            db.collection('transactions').where('createdAt', '>=', today).get()
+                .then((querySnapshot) => {
+                    document.getElementById('today-transactions').textContent = querySnapshot.size;
+                });
+            
+            // Load total boxes in system
+            db.collection('restaurants').get()
+                .then((querySnapshot) => {
+                    let totalBoxes = 0;
+                    querySnapshot.forEach((doc) => {
+                        totalBoxes += doc.data().boxBalance || 0;
+                    });
+                    document.getElementById('total-boxes').textContent = totalBoxes;
+                });
+            
+            // Load recent transactions
+            db.collection('transactions').orderBy('createdAt', 'desc').limit(5).get()
+                .then((querySnapshot) => {
+                    const recentTransactions = document.getElementById('recent-transactions');
+                    recentTransactions.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        recentTransactions.innerHTML = '<tr><td colspan="4" style="text-align: center;">No transactions yet</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((doc) => {
+                        const transaction = doc.data();
+                        const date = transaction.createdAt ? transaction.createdAt.toDate().toLocaleString() : 'N/A';
+                        
+                        recentTransactions.innerHTML += `
+                            <tr>
+                                <td>${date}</td>
+                                <td>${transaction.driverName}</td>
+                                <td>${transaction.restaurantName}</td>
+                                <td>${transaction.boxesGiven} / ${transaction.boxesTaken}</td>
+                            </tr>
+                        `;
+                    });
+                });
+            
+            // Load restaurant balances
+            db.collection('restaurants').orderBy('name').get()
+                .then((querySnapshot) => {
+                    const restaurantBalances = document.getElementById('restaurant-balances');
+                    restaurantBalances.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        restaurantBalances.innerHTML = '<tr><td colspan="3" style="text-align: center;">No restaurants found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((doc) => {
+                        const restaurant = doc.data();
+                        
+                        restaurantBalances.innerHTML += `
+                            <tr>
+                                <td>${restaurant.name}</td>
+                                <td>${restaurant.boxBalance || 0}</td>
+                                <td><span class="status status-${restaurant.status}">${restaurant.status}</span></td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+        
+        // Load drivers from Firebase
+        function loadDrivers() {
+            db.collection('drivers').orderBy('name').get()
+                .then((querySnapshot) => {
+                    const driversList = document.getElementById('drivers-list');
+                    driversList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        driversList.innerHTML = '<tr><td colspan="5" style="text-align: center;">No drivers found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((doc) => {
+                        const driver = doc.data();
+                        
+                        driversList.innerHTML += `
+                            <tr>
+                                <td>${driver.name}</td>
+                                <td>${driver.phone || 'N/A'}</td>
+                                <td>${driver.email || 'N/A'}</td>
+                                <td><span class="status status-${driver.status}">${driver.status}</span></td>
+                                <td class="action-buttons">
+                                    <button class="btn-success" onclick="editDriver('${doc.id}')"><i class="fas fa-edit"></i> Edit</button>
+                                    <button class="btn-danger" onclick="deleteDriver('${doc.id}')"><i class="fas fa-trash"></i> Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error loading drivers: ', error);
+                    document.getElementById('drivers-list').innerHTML = '<tr><td colspan="5" style="text-align: center;">Error loading drivers</td></tr>';
+                });
+        }
+        
+        // Load restaurants from Firebase
+        function loadRestaurants() {
+            db.collection('restaurants').orderBy('name').get()
+                .then((querySnapshot) => {
+                    const restaurantsList = document.getElementById('restaurants-list');
+                    restaurantsList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        restaurantsList.innerHTML = '<tr><td colspan="6" style="text-align: center;">No restaurants found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((doc) => {
+                        const restaurant = doc.data();
+                        
+                        restaurantsList.innerHTML += `
+                            <tr>
+                                <td>${restaurant.name}</td>
+                                <td>${restaurant.address || 'N/A'}</td>
+                                <td>${restaurant.contact || 'N/A'}</td>
+                                <td>${restaurant.boxBalance || 0}</td>
+                                <td><span class="status status-${restaurant.status}">${restaurant.status}</span></td>
+                                <td class="action-buttons">
+                                    <button class="btn-success" onclick="editRestaurant('${doc.id}')"><i class="fas fa-edit"></i> Edit</button>
+                                    <button class="btn-danger" onclick="deleteRestaurant('${doc.id}')"><i class="fas fa-trash"></i> Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error loading restaurants: ', error);
+                    document.getElementById('restaurants-list').innerHTML = '<tr><td colspan="6" style="text-align: center;">Error loading restaurants</td></tr>';
+                });
+        }
+        
+        // Load transactions from Firebase
+        function loadTransactions() {
+            db.collection('transactions').orderBy('createdAt', 'desc').limit(10).get()
+                .then((querySnapshot) => {
+                    const transactionsList = document.getElementById('transactions-list');
+                    transactionsList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        transactionsList.innerHTML = '<tr><td colspan="7" style="text-align: center;">No transactions found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach((doc) => {
+                        const transaction = doc.data();
+                        const date = transaction.createdAt ? transaction.createdAt.toDate().toLocaleString() : 'N/A';
+                        
+                        transactionsList.innerHTML += `
+                            <tr>
+                                <td>${date}</td>
+                                <td>${transaction.driverName}</td>
+                                <td>${transaction.restaurantName}</td>
+                                <td>${transaction.boxesGiven}</td>
+                                <td>${transaction.boxesTaken}</td>
+                                <td>${transaction.boxesGiven - transaction.boxesTaken}</td>
+                                <td class="action-buttons">
+                                    <button class="btn-danger" onclick="deleteTransaction('${doc.id}')"><i class="fas fa-trash"></i> Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    document.getElementById('transactions-count').textContent = querySnapshot.size;
+                })
+                .catch((error) => {
+                    console.error('Error loading transactions: ', error);
+                    document.getElementById('transactions-list').innerHTML = '<tr><td colspan="7" style="text-align: center;">Error loading transactions</td></tr>';
+                });
+        }
+        
+        // Show driver form
+        function showDriverForm(driverId = null) {
+            const form = document.getElementById('driver-form');
+            const title = document.getElementById('driver-form-title');
+            
+            if (driverId) {
+                title.textContent = 'Edit Driver';
+                document.getElementById('driver-id').value = driverId;
+                
+                // Load driver data
+                db.collection('drivers').doc(driverId).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const driver = doc.data();
+                            document.getElementById('driver-name').value = driver.name || '';
+                            document.getElementById('driver-phone').value = driver.phone || '';
+                            document.getElementById('driver-email').value = driver.email || '';
+                            document.getElementById('driver-address').value = driver.address || '';
+                            document.getElementById('driver-status').value = driver.status || 'active';
+                            document.getElementById('driver-notes').value = driver.notes || '';
+                            
+                            // Clear password fields when editing
+                            document.getElementById('driver-password').value = '';
+                            document.getElementById('confirm-password').value = '';
+                            
+                            // Make password fields optional when editing
+                            document.getElementById('driver-password').removeAttribute('required');
+                            document.getElementById('confirm-password').removeAttribute('required');
+                        }
+                    });
+            } else {
+                title.textContent = 'Add New Driver';
+                // Clear form
+                document.getElementById('driver-id').value = '';
+                document.getElementById('driver-name').value = '';
+                document.getElementById('driver-phone').value = '';
+                document.getElementById('driver-email').value = '';
+                document.getElementById('driver-address').value = '';
+                document.getElementById('driver-status').value = 'active';
+                document.getElementById('driver-notes').value = '';
+                document.getElementById('driver-password').value = '';
+                document.getElementById('confirm-password').value = '';
+                
+                // Make password fields required when adding
+                document.getElementById('driver-password').setAttribute('required', 'true');
+                document.getElementById('confirm-password').setAttribute('required', 'true');
+            }
+            
+            form.classList.add('active');
+        }
+        
+        // Hide driver form
+        function hideDriverForm() {
+            document.getElementById('driver-form').classList.remove('active');
+        }
+        
+        // Show restaurant form
+        function showRestaurantForm(restaurantId = null) {
+            const form = document.getElementById('restaurant-form');
+            const title = document.getElementById('restaurant-form-title');
+            
+            if (restaurantId) {
+                title.textContent = 'Edit Restaurant';
+                document.getElementById('restaurant-id').value = restaurantId;
+                
+                // Load restaurant data
+                db.collection('restaurants').doc(restaurantId).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const restaurant = doc.data();
+                            document.getElementById('restaurant-name').value = restaurant.name || '';
+                            document.getElementById('restaurant-address').value = restaurant.address || '';
+                            document.getElementById('restaurant-contact').value = restaurant.contact || '';
+                            document.getElementById('restaurant-phone').value = restaurant.phone || '';
+                            document.getElementById('initial-boxes').value = restaurant.boxBalance || 0;
+                            document.getElementById('restaurant-status').value = restaurant.status || 'active';
+                            document.getElementById('restaurant-notes').value = restaurant.notes || '';
+                        }
+                    });
+            } else {
+                title.textContent = 'Add New Restaurant';
+                // Clear form
+                document.getElementById('restaurant-id').value = '';
+                document.getElementById('restaurant-name').value = '';
+                document.getElementById('restaurant-address').value = '';
+                document.getElementById('restaurant-contact').value = '';
+                document.getElementById('restaurant-phone').value = '';
+                document.getElementById('initial-boxes').value = 0;
+                document.getElementById('restaurant-status').value = 'active';
+                document.getElementById('restaurant-notes').value = '';
+            }
+            
+            form.classList.add('active');
+        }
+        
+        // Hide restaurant form
+        function hideRestaurantForm() {
+            document.getElementById('restaurant-form').classList.remove('active');
+        }
+        
+        // Save driver to Firebase
+        function saveDriver() {
+            const driverId = document.getElementById('driver-id').value;
+            const name = document.getElementById('driver-name').value;
+            const phone = document.getElementById('driver-phone').value;
+            const email = document.getElementById('driver-email').value;
+            const address = document.getElementById('driver-address').value;
+            const status = document.getElementById('driver-status').value;
+            const notes = document.getElementById('driver-notes').value;
+            const password = document.getElementById('driver-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (!name || !phone || !email) {
+                showNotification('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            // Validate password if adding new driver or changing password
+            if (!driverId) {
+                if (password !== confirmPassword) {
+                    showNotification('Passwords do not match', 'error');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showNotification('Password must be at least 6 characters long', 'error');
+                    return;
+                }
+            } else if (password && password !== confirmPassword) {
+                showNotification('Passwords do not match', 'error');
+                return;
+            }
+            
+            const driverData = {
+                name: name,
+                phone: phone,
+                email: email,
+                address: address,
+                status: status,
+                notes: notes,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            // Only add password if it's provided
+            if (password) {
+                driverData.password = encryptPassword(password);
+            }
+            
+            if (driverId) {
+                // Update existing driver
+                db.collection('drivers').doc(driverId).update(driverData)
+                .then(() => {
+                    showNotification('Driver updated successfully!', 'success');
+                    hideDriverForm();
+                    loadDrivers();
+                })
+                .catch((error) => {
+                    console.error('Error updating driver: ', error);
+                    showNotification('Error updating driver: ' + error.message, 'error');
+                });
+            } else {
+                // Add new driver
+                driverData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                
+                db.collection('drivers').add(driverData)
+                .then(() => {
+                    showNotification('Driver added successfully!', 'success');
+                    hideDriverForm();
+                    loadDrivers();
+                })
+                .catch((error) => {
+                    console.error('Error adding driver: ', error);
+                    showNotification('Error adding driver: ' + error.message, 'error');
+                });
+            }
+        }
+        
+        // Save restaurant to Firebase
+        function saveRestaurant() {
+            const restaurantId = document.getElementById('restaurant-id').value;
+            const name = document.getElementById('restaurant-name').value;
+            const address = document.getElementById('restaurant-address').value;
+            const contact = document.getElementById('restaurant-contact').value;
+            const phone = document.getElementById('restaurant-phone').value;
+            const initialBoxes = parseInt(document.getElementById('initial-boxes').value) || 0;
+            const status = document.getElementById('restaurant-status').value;
+            const notes = document.getElementById('restaurant-notes').value;
+            
+            if (!name) {
+                alert('Please enter restaurant name');
+                return;
+            }
+            
+            const restaurantData = {
+                name: name,
+                address: address,
+                contact: contact,
+                phone: phone,
+                status: status,
+                notes: notes,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            if (!restaurantId) {
+                // Only set boxBalance for new restaurants
+                restaurantData.boxBalance = initialBoxes;
+            }
+            
+            if (restaurantId) {
+                // Update existing restaurant
+                db.collection('restaurants').doc(restaurantId).update(restaurantData)
+                .then(() => {
+                    alert('Restaurant updated successfully!');
+                    hideRestaurantForm();
+                    loadRestaurants();
+                    loadRestaurantsForSelect();
+                    loadDashboard();
+                })
+                .catch((error) => {
+                    console.error('Error updating restaurant: ', error);
+                    alert('Error updating restaurant: ' + error.message);
+                });
+            } else {
+                // Add new restaurant
+                restaurantData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                
+                db.collection('restaurants').add(restaurantData)
+                .then(() => {
+                    alert('Restaurant added successfully!');
+                    hideRestaurantForm();
+                    loadRestaurants();
+                    loadRestaurantsForSelect();
+                    loadDashboard();
+                })
+                .catch((error) => {
+                    console.error('Error adding restaurant: ', error);
+                    alert('Error adding restaurant: ' + error.message);
+                });
+            }
+        }
+        
+        // Save transaction to Firebase
+        function saveTransaction() {
+            const driverId = document.getElementById('transaction-driver').value;
+            const restaurantId = document.getElementById('transaction-restaurant').value;
+            const boxesGiven = parseInt(document.getElementById('boxes-given').value) || 0;
+            const boxesTaken = parseInt(document.getElementById('boxes-taken').value) || 0;
+            const notes = document.getElementById('transaction-notes').value;
+            
+            if (!driverId || !restaurantId) {
+                alert('Please select both driver and restaurant');
+                return;
+            }
+            
+            if (boxesGiven === 0 && boxesTaken === 0) {
+                alert('Please enter boxes given or taken');
+                return;
+            }
+            
+            // Get driver and restaurant details for the transaction
+            const driverName = document.getElementById('transaction-driver').options[document.getElementById('transaction-driver').selectedIndex].text;
+            const restaurantName = document.getElementById('transaction-restaurant').options[document.getElementById('transaction-restaurant').selectedIndex].text;
+            
+            // Add transaction to Firebase
+            db.collection('transactions').add({
+                driverId: driverId,
+                driverName: driverName,
+                restaurantId: restaurantId,
+                restaurantName: restaurantName,
+                boxesGiven: boxesGiven,
+                boxesTaken: boxesTaken,
+                notes: notes,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                // Update restaurant box balance
+                const restaurantRef = db.collection('restaurants').doc(restaurantId);
+                restaurantRef.get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const currentBalance = doc.data().boxBalance || 0;
+                            const newBalance = currentBalance + boxesGiven - boxesTaken;
+                            
+                            restaurantRef.update({
+                                boxBalance: newBalance,
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error updating restaurant balance: ', error);
+                    });
+                
+                alert('Transaction recorded successfully!');
+                document.getElementById('boxes-given').value = '0';
+                document.getElementById('boxes-taken').value = '0';
+                document.getElementById('transaction-notes').value = '';
+                document.getElementById('transaction-form').style.display = 'none';
+                loadTransactions();
+                loadDashboard();
+            })
+            .catch((error) => {
+                console.error('Error adding transaction: ', error);
+                alert('Error adding transaction: ' + error.message);
+            });
+        }
+        
+        // Generate report
+        function generateReport() {
+            const startDate = document.getElementById('date-from').value;
+            const endDate = document.getElementById('date-to').value;
+            const reportType = document.getElementById('report-type').value;
+            const driverId = document.getElementById('report-driver').value;
+            const restaurantId = document.getElementById('report-restaurant').value;
+            const sortBy = document.getElementById('report-sort').value;
+            
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+            
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            
+            const reportResults = document.getElementById('report-results');
+            reportResults.innerHTML = '<p>Generating report...</p>';
+            
+            if (reportType === 'transactions') {
+                let query = db.collection('transactions')
+                    .where('createdAt', '>=', start)
+                    .where('createdAt', '<=', end);
+                
+                if (driverId) {
+                    query = query.where('driverId', '==', driverId);
+                }
+                
+                if (restaurantId) {
+                    query = query.where('restaurantId', '==', restaurantId);
+                }
+                
+                // Apply sorting
+                if (sortBy === 'date-desc') {
+                    query = query.orderBy('createdAt', 'desc');
+                } else if (sortBy === 'date-asc') {
+                    query = query.orderBy('createdAt', 'asc');
+                } else if (sortBy === 'restaurant') {
+                    query = query.orderBy('restaurantName');
+                } else if (sortBy === 'driver') {
+                    query = query.orderBy('driverName');
+                }
+                
+                query.get()
+                    .then((querySnapshot) => {
+                        if (querySnapshot.empty) {
+                            reportResults.innerHTML = '<p>No transactions found for the selected criteria.</p>';
+                            return;
+                        }
+                        
+                        let html = `
+                            <h3>Transaction Report (${startDate} to ${endDate})</h3>
+                            <p>Total Transactions: ${querySnapshot.size}</p>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Driver</th>
+                                        <th>Restaurant</th>
+                                        <th>Boxes Given</th>
+                                        <th>Boxes Taken</th>
+                                        <th>Net Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        querySnapshot.forEach((doc) => {
+                            const transaction = doc.data();
+                            const date = transaction.createdAt ? transaction.createdAt.toDate().toLocaleString() : 'N/A';
+                            
+                            html += `
+                                <tr>
+                                    <td>${date}</td>
+                                    <td>${transaction.driverName}</td>
+                                    <td>${transaction.restaurantName}</td>
+                                    <td>${transaction.boxesGiven}</td>
+                                    <td>${transaction.boxesTaken}</td>
+                                    <td>${transaction.boxesGiven - transaction.boxesTaken}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += '</tbody></table>';
+                        reportResults.innerHTML = html;
+                    })
+                    .catch((error) => {
+                        console.error('Error generating transaction report: ', error);
+                        reportResults.innerHTML = '<p>Error generating report: ' + error.message + '</p>';
+                    });
+            } else if (reportType === 'restaurants') {
+                db.collection('restaurants').orderBy('name').get()
+                    .then((querySnapshot) => {
+                        if (querySnapshot.empty) {
+                            reportResults.innerHTML = '<p>No restaurants found.</p>';
+                            return;
+                        }
+                        
+                        let html = `
+                            <h3>Restaurant Balance Report</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Restaurant</th>
+                                        <th>Address</th>
+                                        <th>Contact</th>
+                                        <th>Box Balance</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        querySnapshot.forEach((doc) => {
+                            const restaurant = doc.data();
+                            
+                            html += `
+                                <tr>
+                                    <td>${restaurant.name}</td>
+                                    <td>${restaurant.address || 'N/A'}</td>
+                                    <td>${restaurant.contact || 'N/A'}</td>
+                                    <td>${restaurant.boxBalance || 0}</td>
+                                    <td><span class="status status-${restaurant.status}">${restaurant.status}</span></td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += '</tbody></table>';
+                        reportResults.innerHTML = html;
+                    })
+                    .catch((error) => {
+                        console.error('Error generating restaurant report: ', error);
+                        reportResults.innerHTML = '<p>Error generating report: ' + error.message + '</p>';
+                    });
+            } else if (reportType === 'drivers') {
+                db.collection('drivers').orderBy('name').get()
+                    .then((querySnapshot) => {
+                        if (querySnapshot.empty) {
+                            reportResults.innerHTML = '<p>No drivers found.</p>';
+                            return;
+                        }
+                        
+                        let html = `
+                            <h3>Driver Activity Report</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Driver</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        querySnapshot.forEach((doc) => {
+                            const driver = doc.data();
+                            
+                            html += `
+                                <tr>
+                                    <td>${driver.name}</td>
+                                    <td>${driver.phone || 'N/A'}</td>
+                                    <td>${driver.email || 'N/A'}</td>
+                                    <td><span class="status status-${driver.status}">${driver.status}</span></td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += '</tbody></table>';
+                        reportResults.innerHTML = html;
+                    })
+                    .catch((error) => {
+                        console.error('Error generating driver report: ', error);
+                        reportResults.innerHTML = '<p>Error generating report: ' + error.message + '</p>';
+                    });
+            }
+        }
+        
+        // Edit driver
+        function editDriver(driverId) {
+            showDriverForm(driverId);
+        }
+        
+        // Edit restaurant
+        function editRestaurant(restaurantId) {
+            showRestaurantForm(restaurantId);
+        }
+        
+        // Delete driver
+        function deleteDriver(driverId) {
+            if (confirm('Are you sure you want to delete this driver?')) {
+                db.collection('drivers').doc(driverId).delete()
+                    .then(() => {
+                        alert('Driver deleted successfully!');
+                        loadDrivers();
+                        loadDriversForSelect();
+                    })
+                    .catch((error) => {
+                        console.error('Error deleting driver: ', error);
+                        alert('Error deleting driver: ' + error.message);
+                    });
+            }
+        }
+        
+        // Delete restaurant
+        function deleteRestaurant(restaurantId) {
+            if (confirm('Are you sure you want to delete this restaurant?')) {
+                db.collection('restaurants').doc(restaurantId).delete()
+                    .then(() => {
+                        alert('Restaurant deleted successfully!');
+                        loadRestaurants();
+                        loadRestaurantsForSelect();
+                        loadDashboard();
+                    })
+                    .catch((error) => {
+                        console.error('Error deleting restaurant: ', error);
+                        alert('Error deleting restaurant: ' + error.message);
+                    });
+            }
+        }
+        
+        // Delete transaction
+        function deleteTransaction(transactionId) {
+            if (confirm('Are you sure you want to delete this transaction?')) {
+                // First get the transaction to update restaurant balance
+                db.collection('transactions').doc(transactionId).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const transaction = doc.data();
+                            const restaurantId = transaction.restaurantId;
+                            const boxesGiven = transaction.boxesGiven || 0;
+                            const boxesTaken = transaction.boxesTaken || 0;
+                            
+                            // Update restaurant balance
+                            const restaurantRef = db.collection('restaurants').doc(restaurantId);
+                            restaurantRef.get()
+                                .then((restaurantDoc) => {
+                                    if (restaurantDoc.exists) {
+                                        const currentBalance = restaurantDoc.data().boxBalance || 0;
+                                        const newBalance = currentBalance - boxesGiven + boxesTaken;
+                                        
+                                        restaurantRef.update({
+                                            boxBalance: newBalance,
+                                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                        });
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error('Error updating restaurant balance: ', error);
+                                });
+                            
+                            // Now delete the transaction
+                            db.collection('transactions').doc(transactionId).delete()
+                                .then(() => {
+                                    alert('Transaction deleted successfully!');
+                                    loadTransactions();
+                                    loadDashboard();
+                                })
+                                .catch((error) => {
+                                    console.error('Error deleting transaction: ', error);
+                                    alert('Error deleting transaction: ' + error.message);
+                                });
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error getting transaction: ', error);
+                        alert('Error deleting transaction: ' + error.message);
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
